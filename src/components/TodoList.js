@@ -1,6 +1,4 @@
-/**
- * Created by chalosalvador on 8/2/20
- */
+
 import React, { useEffect } from 'react';
 import '../styles/todo-list.css';
 
