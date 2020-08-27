@@ -2,3 +2,24 @@
   background-color: black;
   color: #ffffff;
 }
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+button{
+  width: 200px;
+}
+.complete{
+  background-color: #00c4ff;
+  color: black;
+}
+.incomplete{
+  background-color: yellow;
+  color: black;
+}
+
+.delete{
+  width: 100px;
+}
