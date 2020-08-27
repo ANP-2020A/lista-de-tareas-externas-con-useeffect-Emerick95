@@ -1,13 +1,16 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/todo-list.css';
+import Spinner from "./Spinner";
 
 const TodoList = () => {
 
-  const [ todos, setTodos ] = React.useState( [] );
-  const [ completed, setCompleted ] = React.useState( [] );
-  const [ darkMode, setDarkMode ] = React.useState( false );
-  const [ windowWidth, setWindowWidth ] = React.useState( window.innerWidth );
+  const [ todos, setTodos ] = useState( [] );
+  const [ completed, setCompleted ] = useState( [] );
+  const [ userInf, setUserInf ] = useState( null);
+  const [ taskInf, setTaskInf ] = useState( []);
+
+  const [number,setNumber]=useState(1);
 
   useEffect( () => {
     console.log( 'efecto', todos.length );
@@ -18,38 +21,30 @@ const TodoList = () => {
     }
   }, [ todos ] );
 
-  useEffect( () => {
-    console.log( 'cambio de fondo', darkMode );
-    if( darkMode ) {
-      console.log( 'DARK' );
-    } else {
-      console.log( 'LIGHT' );
-    }
-  }, [ darkMode ] );
+  useEffect(  () => {
 
-  useEffect( () => {
-    fetch( 'https://jsonplaceholder.typicode.com/users/1' )
-      .then( ( data ) => {
-        return data.json();
-      } )
-      .then( ( json ) => {
-        console.log( 'Datos de usuario', json );
-      } );
-  }, [] );
+    const getData = async ()=>{
+      const data=await fetch('https://jsonplaceholder.typicode.com/users/' + number);
+      const dataJson = await data.json();
+      setUserInf(dataJson);
 
-  const handleResize = () => {
-    setWindowWidth( window.innerWidth );
+      const dataNew = await fetch( 'https://jsonplaceholder.typicode.com/users/' + number + '/todos' );
+      const dataJsonNew = await dataNew.json();
+      console.log(`dataJsonNew`, JSON.stringify(dataJsonNew,null,4));
+      setTaskInf( dataJsonNew );
+    };
+    getData();
+  }, [number] );
+
+  const prevUser = () => {
+    setNumber(number - 1)
+    console.log(number);
   };
 
-  useEffect( () => {
-    console.log( 'Ejecución del efecto' );
-    window.addEventListener( 'resize', handleResize );
-
-    return () => {
-      console.log( 'retorno del efecto ' );
-      window.removeEventListener( 'resize', handleResize );
-    };
-  } );
+  const nextUser = () => {
+    setNumber(number + 1)
+    console.log(number);
+  }
 
   const handleAddTask = () => {
     const task = document.querySelector( '#task' ).value;
@@ -58,88 +53,104 @@ const TodoList = () => {
   };
 
   const handleDeleteTask = ( index ) => {
-    setTodos( ( prevState ) => {
-      return prevState.filter( ( task, i ) => i !== index );
+    setTaskInf( ( prevState ) => {
+      return prevState.filter( ( _, i ) => i !== index );
     } );
   };
 
   const handleCompleteTask = ( index ) => {
-    setCompleted( ( prevState ) => [
-      ...prevState,
-      todos[ index ]
-    ] );
 
-    handleDeleteTask( index );
+    const taskInfUpdated = [ ...taskInf ];
+    taskInfUpdated[index].completed = true;
+    setTaskInf( taskInfUpdated );
+
+    setCompleted( taskInfUpdated);
   };
 
-  const handleDarkMode = () => {
-    setDarkMode( !darkMode );
-  };
 
   return (
-    <div className={ darkMode
-      ? 'dark-mode'
-      : '' }>
-      <div>Ancho de la ventana: { windowWidth }</div>
-      <button onClick={ handleDarkMode }>
+
+    <>
+
+    <div>
+      {
+        number >1 &&
+        <button id="prevUser" onClick={ prevUser }>Anterior usuario</button>
+      }
+
+      {
+        number < 10 &&
+        <button id="nextUser" onClick={ nextUser }>Siguiente Usuario</button>
+      }
+
+      <h1 align="center">Informacion del Usuario {number}</h1>
         {
-          darkMode
-            ? 'Modo claro'
-            : 'Modo oscuro'
+          userInf ?
+                <ul>
+                  <li>Nombre: {userInf.name}</li>
+                  <li>Usuario: {userInf.username}</li>
+                  <li>Correo: {userInf.email}</li>
+                  <li>Sitio Web: {userInf.website}</li>
+                  <li>Teléfono: {userInf.phone}</li>
+                </ul>
+              : <Spinner />
         }
-      </button>
+    </div>
+
+
       <div>
         <label htmlFor='task'>Tarea</label>
         <input type='text' id='task' />
 
         <button onClick={ handleAddTask }>Agregar tarea</button>
       </div>
-      <h1>Lista de tareas pendientes ({ todos.length } en total)</h1>
-      <table>
-        <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Eliminar</th>
-          <th>Completar</th>
-        </tr>
-        </thead>
-        <tbody>
+      <h1>Lista de tareas ({ todos.length } en total)</h1>
+      <ul>
         {
-          todos.map( ( task, index ) => (
-              <tr key={ index }>
-                <td>{ task }</td>
-                <td>
-                  <button onClick={ () => handleDeleteTask( index ) }>Eliminar</button>
-                </td>
-                <td>
-                  <button onClick={ () => handleCompleteTask( index ) }>Completada</button>
-                </td>
-              </tr>
-            )
-          )
+          todos.map( ( task, index ) => {
+                  return <li key={ `task${index}` }>{ task} </li>
+              })
         }
-        </tbody>
-      </table>
+      </ul>
 
-      <h1>Lista de tareas completadas ({ completed.length } en total)</h1>
-      <table>
-        <thead>
-        <tr>
-          <th>Nombre</th>
-        </tr>
-        </thead>
-        <tbody>
+      <div>
+        <h1>Lista de tareas pendientes ({taskInf.length} en total) </h1>
         {
-          completed.map( ( task, index ) => (
-              <tr key={ index }>
-                <td>{ task }</td>
-              </tr>
+          taskInf
+              ?
+        <table>
+          <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th>Eliminar</th>
+          </tr>
+          </thead>
+          <tbody>
+          {
+            taskInf.map( ( taskInf, index ) => (
+                    <tr key={ index }>
+                      <td>{ taskInf.title }</td>
+                      <td>
+                        {
+                          taskInf.completed ?
+                              <button id="completed" className="complete"> Completada</button>
+                              : <button className="incomplete" onClick={()=>handleCompleteTask(index)}>Marcar como completada</button>
+                              }
+                      </td>
+                      <td>
+                        <button onClick={ () => handleDeleteTask(index) }>Eliminar</button>
+                      </td>
+                    </tr>
+                )
             )
-          )
+          }
+          </tbody>
+        </table>
+        : <Spinner />
         }
-        </tbody>
-      </table>
-    </div>
+      </div>
+    </>
   );
 };
 
